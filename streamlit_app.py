@@ -242,11 +242,10 @@ def remove_duplicates(df):
     return df_deduped
 
 # Replace the load_and_clean_data() function in your code with this updated version:
-
 @st.cache_data(ttl=600)
 def load_and_clean_data():
-    """Load and clean both datasets directly from Google Sheets."""
-    
+    """Load and clean both datasets directly from Google Sheets using certifi for SSL."""
+    import requests, io, certifi
     # Google Sheets CSV export URLs
     recyclers_url = (
         "https://docs.google.com/spreadsheets/d/"
@@ -259,37 +258,27 @@ def load_and_clean_data():
         "/export?format=csv&gid=1813673668"
     )
 
-    import requests, io
+    # Fetch recyclers CSV with certifi SSL bundle
+    resp = requests.get(recyclers_url, verify=certifi.where())
+    resp.raise_for_status()
+    recyclers_df = pd.read_csv(io.StringIO(resp.text), header=1)
+    recyclers_df = recyclers_df[
+        ['Date', 'Column 2', 'Name', 'Contact No.', 'Email',
+         'EPR Certified', 'Documents', 'States', 'Category',
+         'Capacity (MT/Annum)', 'Owner', 'Type', 'Remarks']
+    ].copy()
+    recyclers_df.rename(
+        columns={'Column 2': 'Company', 'Capacity (MT/Annum)': 'Capacity'},
+        inplace=True
+    )
+    st.success(f"✅ Loaded recyclers data: {len(recyclers_df)} entries")
 
-    # Load recyclers data via requests to skip SSL verification
-    try:
-        resp = requests.get(recyclers_url, verify=False)
-        resp.raise_for_status()
-        recyclers_df = pd.read_csv(io.StringIO(resp.text), header=1)
-        recyclers_df = recyclers_df[
-            ['Date', 'Column 2', 'Name', 'Contact No.', 'Email',
-             'EPR Certified', 'Documents', 'States', 'Category',
-             'Capacity (MT/Annum)', 'Owner', 'Type', 'Remarks']
-        ].copy()
-        recyclers_df.rename(
-            columns={'Column 2': 'Company', 'Capacity (MT/Annum)': 'Capacity'},
-            inplace=True
-        )
-        st.success(f"✅ Loaded recyclers data: {len(recyclers_df)} entries")
-    except Exception as e:
-        st.error(f"❌ Error loading recyclers data: {e}")
-        return None, None
-
-    # Load positive leads data via requests
-    try:
-        resp2 = requests.get(positive_url, verify=False)
-        resp2.raise_for_status()
-        positive_df = pd.read_csv(io.StringIO(resp2.text))
-        positive_df.rename(columns={'Capacity(Annum)': 'Capacity'}, inplace=True)
-        st.success(f"✅ Loaded positive leads data: {len(positive_df)} entries")
-    except Exception as e:
-        st.error(f"❌ Error loading positive leads data: {e}")
-        return None, None
+    # Fetch positive leads CSV with certifi SSL bundle
+    resp2 = requests.get(positive_url, verify=certifi.where())
+    resp2.raise_for_status()
+    positive_df = pd.read_csv(io.StringIO(resp2.text))
+    positive_df.rename(columns={'Capacity(Annum)': 'Capacity'}, inplace=True)
+    st.success(f"✅ Loaded positive leads data: {len(positive_df)} entries")
 
     # Clean both datasets
     datasets = {'All Recyclers': recyclers_df, 'Positive Leads': positive_df}
@@ -310,6 +299,7 @@ def load_and_clean_data():
         df_clean['Dataset'] = name
         cleaned_datasets[name] = df_clean
 
+    # Return the cleaned DataFrames
     return cleaned_datasets['All Recyclers'], cleaned_datasets['Positive Leads']
 
 
