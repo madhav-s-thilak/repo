@@ -1,5 +1,5 @@
-import requests, io, certifi
-
+import requests, io
+import certifi
 # Google Sheets CSV URLs
 recyclers_url ="https://docs.google.com/spreadsheets/d/1yRg1dZQwxP-Uz81JaFSXCkyPxwChN_ot605kC-1tc1g/export?format=csv&gid=0"
 positive_url = "https://docs.google.com/spreadsheets/d/1yRg1dZQwxP-Uz81JaFSXCkyPxwChN_ot605kC-1tc1g/export?format=csv&gid=1813673668"
@@ -241,12 +241,12 @@ def remove_duplicates(df):
     
     return df_deduped
 
-# Replace the load_and_clean_data() function in your code with this updated version:
+# Replace the load_and_clean_data() function in your code with this updated version
+
 @st.cache_data(ttl=600)
 def load_and_clean_data():
-    """Load and clean both datasets directly from Google Sheets using certifi for SSL."""
     import requests, io, certifi
-    # Google Sheets CSV export URLs
+    
     recyclers_url = (
         "https://docs.google.com/spreadsheets/d/"
         "1yRg1dZQwxP-Uz81JaFSXCkyPxwChN_ot605kC-1tc1g"
@@ -258,7 +258,7 @@ def load_and_clean_data():
         "/export?format=csv&gid=1813673668"
     )
 
-    # Fetch recyclers CSV with certifi SSL bundle
+    # Securely fetch recyclers
     resp = requests.get(recyclers_url, verify=certifi.where())
     resp.raise_for_status()
     recyclers_df = pd.read_csv(io.StringIO(resp.text), header=1)
@@ -273,14 +273,14 @@ def load_and_clean_data():
     )
     st.success(f"✅ Loaded recyclers data: {len(recyclers_df)} entries")
 
-    # Fetch positive leads CSV with certifi SSL bundle
+    # Securely fetch positive leads
     resp2 = requests.get(positive_url, verify=certifi.where())
     resp2.raise_for_status()
     positive_df = pd.read_csv(io.StringIO(resp2.text))
     positive_df.rename(columns={'Capacity(Annum)': 'Capacity'}, inplace=True)
     st.success(f"✅ Loaded positive leads data: {len(positive_df)} entries")
-
-    # Clean both datasets
+  
+    # Clean datasets
     datasets = {'All Recyclers': recyclers_df, 'Positive Leads': positive_df}
     cleaned_datasets = {}
 
@@ -299,9 +299,7 @@ def load_and_clean_data():
         df_clean['Dataset'] = name
         cleaned_datasets[name] = df_clean
 
-    # Return the cleaned DataFrames
     return cleaned_datasets['All Recyclers'], cleaned_datasets['Positive Leads']
-
 
 def calculate_data_quality_score(df):
     """Calculate data quality score for each row"""
