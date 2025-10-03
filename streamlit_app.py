@@ -1,5 +1,17 @@
 import requests, io
 import certifi
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import re
+import os
+import numpy as np
+from datetime import datetime
+import warnings
+warnings.filterwarnings('ignore')
 # Google Sheets CSV URLs
 recyclers_url ="https://docs.google.com/spreadsheets/d/1yRg1dZQwxP-Uz81JaFSXCkyPxwChN_ot605kC-1tc1g/export?format=csv&gid=0"
 positive_url = "https://docs.google.com/spreadsheets/d/1yRg1dZQwxP-Uz81JaFSXCkyPxwChN_ot605kC-1tc1g/export?format=csv&gid=1813673668"
@@ -14,18 +26,6 @@ resp2 = requests.get(positive_url, verify=certifi.where())
 resp2.raise_for_status()
 positive_df = pd.read_csv(io.StringIO(resp2.text))
 
-import urllib3
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-import re
-import os
-import numpy as np
-from datetime import datetime
-import warnings
-warnings.filterwarnings('ignore')
 
 # Load state mapping + coordinates for India
 STATE_COORDS = {
