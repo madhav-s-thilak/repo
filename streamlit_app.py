@@ -1,3 +1,19 @@
+import requests, io, certifi
+
+# Google Sheets CSV URLs
+recyclers_url ="https://docs.google.com/spreadsheets/d/1yRg1dZQwxP-Uz81JaFSXCkyPxwChN_ot605kC-1tc1g/export?format=csv&gid=0"
+positive_url = "https://docs.google.com/spreadsheets/d/1yRg1dZQwxP-Uz81JaFSXCkyPxwChN_ot605kC-1tc1g/export?format=csv&gid=1813673668"
+
+# Fetch recyclers
+resp = requests.get(recyclers_url, verify=certifi.where())
+resp.raise_for_status()
+recyclers_df = pd.read_csv(io.StringIO(resp.text), header=1)
+
+# Fetch positive leads
+resp2 = requests.get(positive_url, verify=certifi.where())
+resp2.raise_for_status()
+positive_df = pd.read_csv(io.StringIO(resp2.text))
+
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 import streamlit as st

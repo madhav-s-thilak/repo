@@ -3,3 +3,4 @@ pandas==2.0.3
 plotly==5.17.0
 numpy==1.24.3
 requests==2.31.0
+certifi==2025.9.3
