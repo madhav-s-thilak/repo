@@ -379,6 +379,7 @@ st.markdown("""
 # Load data
 recyclers_data, positive_data = load_and_clean_data()
 
+
 if recyclers_data is not None and positive_data is not None:
     
     # Sidebar Configuration
@@ -469,6 +470,24 @@ if recyclers_data is not None and positive_data is not None:
         help="Filter by data quality score"
     )
     
+    # Date filter
+    if "Date" in df_to_use.columns:
+        df_to_use["Date"] = pd.to_datetime(df_to_use["Date"], errors='coerce')
+        min_date = df_to_use["Date"].min()
+        max_date = df_to_use["Date"].max()
+        if pd.isna(min_date) or pd.isna(max_date):
+            import datetime
+            min_date = max_date = datetime.date.today()
+        date_range = st.sidebar.date_input(
+            "📅 Filter by Date Range",
+            value=(min_date.date(), max_date.date()),
+            min_value=min_date.date(),
+            max_value=max_date.date(),
+            help="Select date range to filter"
+        )
+    else:
+        date_range = None
+    
     # Advanced Options
     with st.sidebar.expander("⚙️ Advanced Options"):
         show_duplicates = st.checkbox("Show Potential Duplicates", help="Highlight similar companies")
@@ -508,6 +527,13 @@ if recyclers_data is not None and positive_data is not None:
     
     if quality_threshold > 0:
         filtered_df = filtered_df[filtered_df['Data_Quality_Score'] >= quality_threshold]
+    
+    # Apply date filter
+    if date_range and len(date_range) == 2 and "Date" in filtered_df.columns:
+        start_date, end_date = pd.to_datetime(date_range[0]), pd.to_datetime(date_range[1])
+        filtered_df = filtered_df[
+            (filtered_df['Date'] >= start_date) & (filtered_df['Date'] <= end_date)
+        ]
     
     if show_contact_verified:
         filtered_df = filtered_df[filtered_df['Contact No.'].str.len() >= 10]
