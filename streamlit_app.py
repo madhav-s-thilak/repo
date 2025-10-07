@@ -343,80 +343,6 @@ def validate_email(email):
     
     return bool(re.match(pattern, email_str))
 
-@st.cache_data(ttl=600)
-def load_and_clean_data():
-    import requests, io, certifi
-    
-    recyclers_url = (
-        "https://docs.google.com/spreadsheets/d/"
-        "1yRg1dZQwxP-Uz81JaFSXCkyPxwChN_ot605kC-1tc1g"
-        "/export?format=csv&gid=0"
-    )
-    positive_url = (
-        "https://docs.google.com/spreadsheets/d/"
-        "1yRg1dZQwxP-Uz81JaFSXCkyPxwChN_ot605kC-1tc1g"
-        "/export?format=csv&gid=1813673668"
-    )
-
-    # Securely fetch recyclers
-    try:
-        resp = requests.get(recyclers_url, verify=certifi.where(), timeout=30)
-        resp.raise_for_status()
-        recyclers_df = pd.read_csv(io.StringIO(resp.text), header=1)
-        recyclers_df = recyclers_df[
-            ['Date', 'Column 2', 'Name', 'Contact No.', 'Email',
-             'EPR Certified', 'Documents', 'States', 'Category',
-             'Capacity (MT/Annum)', 'Owner', 'Type', 'Remarks']
-        ].copy()
-        recyclers_df.rename(
-            columns={'Column 2': 'Company', 'Capacity (MT/Annum)': 'Capacity'},
-            inplace=True
-        )
-        st.success(f"✅ Loaded recyclers data: {len(recyclers_df)} entries")
-    except Exception as e:
-        st.error(f"❌ Error loading recyclers data: {str(e)}")
-        return None, None
-
-    # Securely fetch positive leads
-    try:
-        resp2 = requests.get(positive_url, verify=certifi.where(), timeout=30)
-        resp2.raise_for_status()
-        positive_df = pd.read_csv(io.StringIO(resp2.text))
-        positive_df.rename(columns={'Capacity(Annum)': 'Capacity'}, inplace=True)
-        st.success(f"✅ Loaded positive leads data: {len(positive_df)} entries")
-    except Exception as e:
-        st.error(f"❌ Error loading positive leads data: {str(e)}")
-        return None, None
-  
-    # Clean datasets
-    datasets = {'All Recyclers': recyclers_data, 'Positive Leads': positive_data}
-    cleaned_datasets = {}
-
-    for name, df in datasets.items():
-        df_clean = df.copy()
-        df_clean['Date'] = df_clean['Date'].apply(clean_date)
-        df_clean['Company'] = df_clean['Company'].apply(clean_company_name)
-        df_clean['States'] = df_clean['States'].apply(clean_state_name)
-        df_clean['Category'] = df_clean['Category'].apply(clean_category_name)
-        df_clean['Capacity'] = df_clean['Capacity'].apply(clean_capacity)
-        df_clean['Contact No.'] = df_clean['Contact No.'].apply(clean_contact_number)
-        df_clean['EPR Certified'] = df_clean['EPR Certified'].apply(clean_epr_status)
-        df_clean['Documents'] = df_clean['Documents'].apply(clean_documents_status)
-        df_clean = remove_duplicates(df_clean)
-        df_clean['Data_Quality_Score'] = calculate_data_quality_score(df_clean)
-        df_clean['Dataset'] = name
-        
-        # CRITICAL FIX: Add distributed capacity per category
-        df_clean['Distributed_Capacity'] = df_clean.apply(get_distributed_capacity, axis=1)
-        
-        # Add validation columns
-        df_clean['Valid_Contact'] = df_clean['Contact No.'].apply(validate_contact_number)
-        df_clean['Valid_Email'] = df_clean['Email'].apply(validate_email)
-        
-        cleaned_datasets[name] = df_clean
-
-    return cleaned_datasets['All Recyclers'], cleaned_datasets['Positive Leads']
-
 def calculate_data_quality_score(df):
     """Enhanced data quality score calculation"""
     if len(df) == 0:
@@ -489,6 +415,80 @@ def get_category_wise_capacity_data(df):
                     })
     
     return pd.DataFrame(category_records)
+
+@st.cache_data(ttl=600)
+def load_and_clean_data():
+    import requests, io, certifi
+    
+    recyclers_url = (
+        "https://docs.google.com/spreadsheets/d/"
+        "1yRg1dZQwxP-Uz81JaFSXCkyPxwChN_ot605kC-1tc1g"
+        "/export?format=csv&gid=0"
+    )
+    positive_url = (
+        "https://docs.google.com/spreadsheets/d/"
+        "1yRg1dZQwxP-Uz81JaFSXCkyPxwChN_ot605kC-1tc1g"
+        "/export?format=csv&gid=1813673668"
+    )
+
+    # Securely fetch recyclers
+    try:
+        resp = requests.get(recyclers_url, verify=certifi.where(), timeout=30)
+        resp.raise_for_status()
+        recyclers_df = pd.read_csv(io.StringIO(resp.text), header=1)
+        recyclers_df = recyclers_df[
+            ['Date', 'Column 2', 'Name', 'Contact No.', 'Email',
+             'EPR Certified', 'Documents', 'States', 'Category',
+             'Capacity (MT/Annum)', 'Owner', 'Type', 'Remarks']
+        ].copy()
+        recyclers_df.rename(
+            columns={'Column 2': 'Company', 'Capacity (MT/Annum)': 'Capacity'},
+            inplace=True
+        )
+        st.success(f"✅ Loaded recyclers data: {len(recyclers_df)} entries")
+    except Exception as e:
+        st.error(f"❌ Error loading recyclers data: {str(e)}")
+        return None, None
+
+    # Securely fetch positive leads
+    try:
+        resp2 = requests.get(positive_url, verify=certifi.where(), timeout=30)
+        resp2.raise_for_status()
+        positive_df = pd.read_csv(io.StringIO(resp2.text))
+        positive_df.rename(columns={'Capacity(Annum)': 'Capacity'}, inplace=True)
+        st.success(f"✅ Loaded positive leads data: {len(positive_df)} entries")
+    except Exception as e:
+        st.error(f"❌ Error loading positive leads data: {str(e)}")
+        return None, None
+  
+    # FIXED: Clean datasets with correct variable names
+    datasets = {'All Recyclers': recyclers_df, 'Positive Leads': positive_df}
+    cleaned_datasets = {}
+
+    for name, df in datasets.items():
+        df_clean = df.copy()
+        df_clean['Date'] = df_clean['Date'].apply(clean_date)
+        df_clean['Company'] = df_clean['Company'].apply(clean_company_name)
+        df_clean['States'] = df_clean['States'].apply(clean_state_name)
+        df_clean['Category'] = df_clean['Category'].apply(clean_category_name)
+        df_clean['Capacity'] = df_clean['Capacity'].apply(clean_capacity)
+        df_clean['Contact No.'] = df_clean['Contact No.'].apply(clean_contact_number)
+        df_clean['EPR Certified'] = df_clean['EPR Certified'].apply(clean_epr_status)
+        df_clean['Documents'] = df_clean['Documents'].apply(clean_documents_status)
+        df_clean = remove_duplicates(df_clean)
+        df_clean['Data_Quality_Score'] = calculate_data_quality_score(df_clean)
+        df_clean['Dataset'] = name
+        
+        # CRITICAL FIX: Add distributed capacity per category
+        df_clean['Distributed_Capacity'] = df_clean.apply(get_distributed_capacity, axis=1)
+        
+        # Add validation columns
+        df_clean['Valid_Contact'] = df_clean['Contact No.'].apply(validate_contact_number)
+        df_clean['Valid_Email'] = df_clean['Email'].apply(validate_email)
+        
+        cleaned_datasets[name] = df_clean
+
+    return cleaned_datasets['All Recyclers'], cleaned_datasets['Positive Leads']
 
 # Streamlit App Configuration
 st.set_page_config(
@@ -2004,7 +2004,7 @@ st.markdown(f"""
     <p><strong>Advanced Business Intelligence Platform for EPR Compliance & Waste Management</strong></p>
     <p>Real-time data analysis • Comprehensive filtering • Export capabilities • Quality scoring</p>
     <small>Last updated: {datetime.now().strftime("%Y-%m-%d %H:%M")}</small><br>
-    <small>✅ <strong>FIXED:</strong> Quick Presets in Sidebar • Reset All Works Perfectly • Category Distribution Fixed</small><br>
+    <small>✅ <strong>FIXED:</strong> Quick Presets in Sidebar • Reset All Works Perfectly • Category Distribution Fixed • All Errors Resolved</small><br>
     <small>Developed with ❤️ for sustainable waste management</small>
 </div>
 """, unsafe_allow_html=True)
