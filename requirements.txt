@@ -7,3 +7,4 @@ plotly==5.17.0
 numpy>=1.25.0
 requests==2.31.0
 certifi==2023.7.22
+psutil
