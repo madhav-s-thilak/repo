@@ -343,25 +343,6 @@ def validate_email(email):
     
     return bool(re.match(pattern, email_str))
 
-# FIXED: Reset all filters function
-def reset_all_filters():
-    """Reset all filter-related session state variables"""
-    filter_keys = [
-        'state_multiselect', 'category_multiselect', 'epr_multiselect', 
-        'doc_multiselect', 'owner_multiselect', 'company_search_key',
-        'capacity_slider', 'quality_slider', 'date_range_key'
-    ]
-    
-    for key in filter_keys:
-        if key in st.session_state:
-            del st.session_state[key]
-    
-    # Reset specific values
-    if 'quality_threshold' in st.session_state:
-        del st.session_state['quality_threshold']
-    if 'capacity_range' in st.session_state:
-        del st.session_state['capacity_range']
-
 @st.cache_data(ttl=600)
 def load_and_clean_data():
     import requests, io, certifi
@@ -408,7 +389,7 @@ def load_and_clean_data():
         return None, None
   
     # Clean datasets
-    datasets = {'All Recyclers': recyclers_df, 'Positive Leads': positive_df}
+    datasets = {'All Recyclers': recyclers_data, 'Positive Leads': positive_data}
     cleaned_datasets = {}
 
     for name, df in datasets.items():
@@ -565,6 +546,18 @@ st.markdown("""
         padding: 10px; 
         margin: 10px 0; 
     }
+    .sidebar .stButton > button {
+        width: 100%;
+        margin: 2px 0;
+        background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+        border: 1px solid #dee2e6;
+        color: #495057;
+        font-weight: 500;
+    }
+    .sidebar .stButton > button:hover {
+        background: linear-gradient(145deg, #e2e6ea, #dae0e5);
+        border: 1px solid #adb5bd;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -608,23 +601,63 @@ if recyclers_data is not None and positive_data is not None:
     # Filters Section with enhanced organization
     st.sidebar.markdown("### 🔍 Smart Filters")
     
-    # Quick filter presets
+    # FIXED: Quick filter presets IN SIDEBAR with proper layout
     st.sidebar.markdown("#### ⚡ Quick Presets")
-    col1, col2 = st.columns(2)
     
-    with col1:
-        if st.button("🏆 Top Quality", help="Companies with high data quality scores", key="preset_top_quality"):
-            st.session_state['quality_threshold'] = 70
-        if st.button("✅ Certified Only", help="EPR certified companies only", key="preset_certified"):
-            st.session_state['epr_filter'] = ['Certified']
+    # Create 2x2 grid layout for buttons in sidebar
+    preset_col1, preset_col2 = st.sidebar.columns(2)
     
-    with col2:
-        if st.button("📄 With Docs", help="Companies with required documents", key="preset_with_docs"):
-            st.session_state['doc_filter'] = ['With Documents']
-        # FIXED: Reset All button with proper session state clearing
-        if st.button("🔄 Reset All", help="Clear all filters", key="preset_reset"):
-            reset_all_filters()
-            st.rerun()
+    with preset_col1:
+        top_quality_clicked = st.button("🏆 Top Quality", help="Companies with high data quality scores", key="preset_top_quality", use_container_width=True)
+        certified_only_clicked = st.button("✅ Certified Only", help="EPR certified companies only", key="preset_certified", use_container_width=True)
+    
+    with preset_col2:
+        with_docs_clicked = st.button("📄 With Docs", help="Companies with required documents", key="preset_with_docs", use_container_width=True)
+        reset_all_clicked = st.button("🔄 Reset All", help="Clear all filters", key="preset_reset", use_container_width=True)
+    
+    # FIXED: Handle button clicks with proper session state management
+    if top_quality_clicked:
+        # Clear existing filters first
+        for key in ['quality_threshold', 'epr_filter', 'doc_filter']:
+            if key in st.session_state:
+                del st.session_state[key]
+        st.session_state['quality_threshold'] = 70
+        st.rerun()
+    
+    if certified_only_clicked:
+        # Clear existing filters first
+        for key in ['quality_threshold', 'epr_filter', 'doc_filter']:
+            if key in st.session_state:
+                del st.session_state[key]
+        st.session_state['epr_filter'] = ['Certified']
+        st.rerun()
+    
+    if with_docs_clicked:
+        # Clear existing filters first
+        for key in ['quality_threshold', 'epr_filter', 'doc_filter']:
+            if key in st.session_state:
+                del st.session_state[key]
+        st.session_state['doc_filter'] = ['With Documents']
+        st.rerun()
+    
+    # FIXED: Reset All button with comprehensive session state clearing
+    if reset_all_clicked:
+        # Clear ALL filter-related session state keys
+        filter_keys = [
+            'state_multiselect', 'category_multiselect', 'epr_multiselect', 
+            'doc_multiselect', 'owner_multiselect', 'company_search_key',
+            'capacity_slider', 'quality_slider', 'date_range_key',
+            'quality_threshold', 'epr_filter', 'doc_filter', 'state_filter', 
+            'category_filter', 'owner_filter', 'capacity_range'
+        ]
+        
+        # Delete all filter keys from session state
+        for key in list(st.session_state.keys()):
+            if any(filter_key in key for filter_key in filter_keys):
+                del st.session_state[key]
+        
+        # Force rerun to reset all widgets
+        st.rerun()
     
     # Company search with enhanced functionality
     st.sidebar.markdown("#### 🏢 Company Search")
@@ -632,7 +665,8 @@ if recyclers_data is not None and positive_data is not None:
         "",
         placeholder="Search company names...",
         help="Type to search for specific companies (case-insensitive)",
-        key="company_search_key"
+        key="company_search_key",
+        value=""  # Always start with empty value after reset
     )
     
     # State filter
@@ -641,7 +675,7 @@ if recyclers_data is not None and positive_data is not None:
     state_filter = st.sidebar.multiselect(
         "Select States/UTs",
         available_states,
-        default=st.session_state.get('state_filter', []),
+        default=[],  # Always start empty after reset
         help="Select one or more states for regional analysis",
         key="state_multiselect"
     )
@@ -652,7 +686,7 @@ if recyclers_data is not None and positive_data is not None:
     category_filter = st.sidebar.multiselect(
         "Select Waste Categories",
         available_categories,
-        default=st.session_state.get('category_filter', []),
+        default=[],  # Always start empty after reset
         help="Choose specific waste categories (CAT-1: PET, CAT-2: HDPE, CAT-3: PVC, etc.) or Unknown",
         key="category_multiselect"
     )
@@ -685,7 +719,7 @@ if recyclers_data is not None and positive_data is not None:
     owner_filter = st.sidebar.multiselect(
         "👤 Data Owner/Team",
         owners,
-        default=st.session_state.get('owner_filter', []),
+        default=[],  # Always start empty after reset
         help="Filter by who collected/owns this data",
         key="owner_multiselect"
     )
@@ -1970,7 +2004,7 @@ st.markdown(f"""
     <p><strong>Advanced Business Intelligence Platform for EPR Compliance & Waste Management</strong></p>
     <p>Real-time data analysis • Comprehensive filtering • Export capabilities • Quality scoring</p>
     <small>Last updated: {datetime.now().strftime("%Y-%m-%d %H:%M")}</small><br>
-    <small>✅ <strong>FIXED:</strong> Category capacity is now correctly distributed • Reset All button works • All issues resolved</small><br>
+    <small>✅ <strong>FIXED:</strong> Quick Presets in Sidebar • Reset All Works Perfectly • Category Distribution Fixed</small><br>
     <small>Developed with ❤️ for sustainable waste management</small>
 </div>
 """, unsafe_allow_html=True)
