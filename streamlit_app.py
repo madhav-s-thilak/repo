@@ -875,8 +875,8 @@ if recyclers_data is not None and positive_data is not None:
         if df_to_use['Capacity'].max() > 0:
             max_capacity = int(df_to_use['Capacity'].max())
             # Cap unreasonable maximum values
-            if max_capacity > 500000:  # More than 500k MT is likely data error
-                max_capacity = 100000
+            if max_capacity > 1000000:  # More than 1000k MT is likely data error
+                max_capacity = 500000
             
             capacity_range = st.sidebar.slider(
                 "⚖️ Processing Capacity (MT/Year)",
