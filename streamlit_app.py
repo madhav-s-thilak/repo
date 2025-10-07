@@ -1,6 +1,4 @@
 import requests, io
-import psutil
-import time
 import certifi
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -1882,7 +1880,7 @@ st.markdown(f"""
     <p><strong>Advanced Business Intelligence Platform for EPR Compliance & Waste Management</strong></p>
     <p>Real-time data analysis • Comprehensive filtering • Export capabilities • Quality scoring</p>
     <small>Last updated: {datetime.now().strftime("%Y-%m-%d %H:%M")}</small><br>
-    <small>Developed with ❤️ for TIDY RABBIT</small>
+    <small>Developed with ❤️ for sustainable waste management</small>
 </div>
 """, unsafe_allow_html=True)
 
@@ -1900,7 +1898,10 @@ if st.sidebar.checkbox("🔧 Show Debug Info", help="Display technical informati
             st.write(f"**Combined Data:** {len(df_to_use)}")
 
 # Optional: Add performance monitoring
-if st.sidebar.checkbox("📊 Performance Monitor", help="Show app performance metrics"):    
+if st.sidebar.checkbox("📊 Performance Monitor", help="Show app performance metrics"):
+    import psutil
+    import time
+    
     with st.sidebar.expander("⚡ Performance Metrics"):
         cpu_usage = psutil.cpu_percent()
         memory_usage = psutil.virtual_memory().percent
