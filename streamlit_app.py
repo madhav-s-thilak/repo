@@ -2004,8 +2004,7 @@ st.markdown(f"""
     <p><strong>Advanced Business Intelligence Platform for EPR Compliance & Waste Management</strong></p>
     <p>Real-time data analysis • Comprehensive filtering • Export capabilities • Quality scoring</p>
     <small>Last updated: {datetime.now().strftime("%Y-%m-%d %H:%M")}</small><br>
-    <small>✅ <strong>FIXED:</strong> Quick Presets in Sidebar • Reset All Works Perfectly • Category Distribution Fixed • All Errors Resolved</small><br>
-    <small>Developed with ❤️ for sustainable waste management</small>
+    <small>Developed with ❤️ for Tidy Rabbit</small>
 </div>
 """, unsafe_allow_html=True)
 
